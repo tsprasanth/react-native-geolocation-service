@@ -27,6 +27,7 @@ export default function App() {
   const [foregroundService, setForegroundService] = useState(false);
   const [useLocationManager, setUseLocationManager] = useState(false);
   const [location, setLocation] = useState<GeoPosition | null>(null);
+  const [address,setAddress] = useState();
 
   const watchId = useRef<number | null>(null);
 
@@ -43,6 +44,33 @@ export default function App() {
       setObserving(false);
     }
   };
+
+  const myApiKey ="AIzaSyBrtUj_LsB7X0U57CiCN0eswxTnj0i_SVE";
+
+  const  getAddressFromCoordinates = (latitude, longitude)=> {
+    return new Promise((resolve, reject) => {
+      fetch(
+        'https://maps.googleapis.com/maps/api/geocode/json?address=' +
+          latitude +
+          ',' +
+          longitude +
+          '&key=' +
+          myApiKey,
+      )
+        .then(response => response.json())
+        .then(responseJson => {
+          if (responseJson.status === 'OK') {
+            resolve(responseJson?.results?.[0]?.formatted_address);
+            setAddress(responseJson?.results?.[0]?.formatted_address);
+          } else {
+            reject('not found');
+          }
+        })
+        .catch(error => {
+          reject(error);
+        });
+    });
+  }
 
   useEffect(() => {
     return () => {
@@ -131,6 +159,7 @@ export default function App() {
     Geolocation.getCurrentPosition(
       position => {
         setLocation(position);
+        getAddressFromCoordinates(position?.coords?.latitude,position?.coords?.longitude)
         console.log(position);
       },
       error => {
@@ -284,7 +313,9 @@ export default function App() {
           </View>
         </View>
         <View style={styles.result}>
+          <Text>Address: {address || ''}</Text>
           <Text>Latitude: {location?.coords?.latitude || ''}</Text>
+          
           <Text>Longitude: {location?.coords?.longitude || ''}</Text>
           <Text>Heading: {location?.coords?.heading}</Text>
           <Text>Accuracy: {location?.coords?.accuracy}</Text>
